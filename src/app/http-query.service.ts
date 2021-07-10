@@ -6,12 +6,11 @@ import {
   map,
   startWith,
   switchMap,
-  switchMapTo,
   tap,
 } from 'rxjs/operators';
 
 type Query<TResponseData, TDependency> =
-  | ((dep?: TDependency) => Observable<TResponseData>)
+  | ((dep: TDependency) => Observable<TResponseData>)
   | Observable<TResponseData>;
 
 interface QueryArgs<TResponseData, TDependency> {

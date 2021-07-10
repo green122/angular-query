@@ -26,7 +26,7 @@ export class AppComponent {
   ) {
     const createdPeopleQuery = this.httpQuery.createQuery({
       key: 'starwarspeople',
-      query: (id?: string) =>
+      query: (id: string) =>
         this.httpClient.get<{ name: string }>(
           `https://swapi.dev/api/people/${id}`
         ),
@@ -35,7 +35,7 @@ export class AppComponent {
 
     const createdShipQuery = this.httpQuery.createQuery({
       key: 'starwarspeople',
-      query: (arg?: { name: string }) => {
+      query: (arg: { name: string }) => {
         console.log(arg);
         return this.httpClient.get<{ name: string }>(
           `https://swapi.dev/api/ships`
