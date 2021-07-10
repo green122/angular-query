@@ -1,0 +1,5 @@
+<ng-container *ngIf="query$ | async as query" >
+  <div *ngIf="query.loading">...Loading...</div>
+  <div *ngIf="query.data">{{ query.data.name }}</div>
+  <div *ngIf="query.error">{{ query.error }}</div>
+</ng-container>
