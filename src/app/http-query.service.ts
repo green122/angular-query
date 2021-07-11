@@ -22,6 +22,7 @@ interface QueryArgs<TResponseData, TDependency> {
 
 type ErrorStatus = { loading: false; data: null; error: string };
 
+type QueryStatus = 'fetching' | 'error' | 'success';
 export type QueryState<T> =
   | { loading: true; data: null; error: null }
   | { loading: false; data?: T; error: null }
@@ -54,7 +55,7 @@ const isPropertyDefined =
 
 const getRequest$ = <TResponseData, TDependency>(
   query: Query<TResponseData, TDependency>,
-  dep?: TDependency
+  dep: TDependency
 ) => {
   const request$ = isFunction(query) ? query(dep) : query;
   return request$.pipe(
@@ -81,15 +82,15 @@ export class HttpQueryService {
     args: QueryArgs<TResponseData, TDependency>
   ): QueryResult<TResponseData, TDependency> {
     const subject$ = new BehaviorSubject<
-      { variable?: TDependency } | undefined
+      { variable: TDependency } | undefined
     >(undefined);
 
     const getQuerySubject = (
-      trigger: Observable<{ variable?: TDependency } | undefined>
+      trigger: Observable<{ variable: TDependency } | undefined>
     ) => {
       return trigger.pipe(
         filter(isDefined),
-        switchMap(({ variable }) => getRequest$(args.query, variable)),
+        switchMap(({ variable }) => getRequest$(args.query, variable as TDependency)),
         catchError((error) => {
           return of<ErrorStatus>({
             loading: false,
@@ -112,11 +113,10 @@ export class HttpQueryService {
       state$: query$,
       data$: query$.pipe(
         map((state) => state.data),
-        tap((v) => v),
         filter(isDefined),
         filter(notIsNull)
       ),
-      fetch(dep?: TDependency) {
+      fetch(dep: TDependency) {
         subject$.next({ variable: dep });
       },
     };
