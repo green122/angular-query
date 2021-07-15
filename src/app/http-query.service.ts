@@ -79,7 +79,8 @@ export class HttpQueryService {
   constructor() {}
 
   createQuery<TResponseData, TDependency>(
-    args: QueryArgs<TResponseData, TDependency>
+    args: QueryArgs<TResponseData, TDependency>,
+    withCache: boolean
   ): QueryResult<TResponseData, TDependency> {
     const subject$ = new BehaviorSubject<
       { variable: TDependency } | undefined
