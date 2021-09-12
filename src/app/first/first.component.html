@@ -1,0 +1,13 @@
+<ng-container *ngIf="queryAllPeople.state$ | async as query">
+    <div *ngIf="query.loading">...Loading...</div>
+    <div *ngIf="query.data as data">
+      <div
+        *ngFor="let item of data; index as i"
+        [routerLink]="['/person', i + 1]"
+        routerLinkActive="router-link-active"
+      >
+        {{ item.name }}
+      </div>
+    </div>
+    <div *ngIf="query.error">{{ query.error }}</div>
+  </ng-container>

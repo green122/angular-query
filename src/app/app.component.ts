@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
+import { pluck, tap } from 'rxjs/operators';
 import {
   HttpQueryService,
   QueryResult,
@@ -14,45 +15,29 @@ import {
 })
 export class AppComponent {
   title = 'lib-query';
-  query$: Observable<QueryState<{ name: string }>>;
-
   trigger$ = new Subject<string>();
 
-  fetch: (id?: string) => void;
+  createdShipQuery = this.httpQuery.createQuery({
+    key: 'starwarsship',
+    query: (arg: { name: string }) => {
+      return this.httpClient.get<{ name: string }>(
+        `https://swapi.dev/api/starships`
+      );
+    },
+    cacheTime: 15000,
+  });
 
   constructor(
     private httpQuery: HttpQueryService,
     private httpClient: HttpClient
-  ) {
-    const createdPeopleQuery = this.httpQuery.createQuery({
-      key: 'starwarspeople',
-      query: (id: string) =>
-        this.httpClient.get<{ name: string }>(
-          `https://swapi.dev/api/people/${id}`
-        ),
-      trigger: this.trigger$,
-    });
-
-    const createdShipQuery = this.httpQuery.createQuery({
-      key: 'starwarspeople',
-      query: (arg: { name: string }) => {
-        console.log(arg);
-        return this.httpClient.get<{ name: string }>(
-          `https://swapi.dev/api/ships`
-        );
-      },
-      trigger: createdPeopleQuery.data$,
-    });
-    this.query$ = createdPeopleQuery.state$;
-    this.fetch = createdPeopleQuery.fetch;
-
-    createdShipQuery.state$.subscribe(console.log);
-  }
+  ) {}
 
   ngOnInit() {
-    // this.query$.subscribe(console.log);
-    this.fetch('1');
-
-    setTimeout(() => this.trigger$.next('3'), 3000);
+    this.createdShipQuery.data$.subscribe(console.log);
+    this.createdShipQuery.fetch({ name: 'just an example' });
+    setTimeout(() => {
+      console.log('cache is invalidated and the new request is made');
+      this.createdShipQuery.refetch({ name: 'just an example1' })
+    }, 5000);
   }
 }

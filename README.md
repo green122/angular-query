@@ -1,5 +1,87 @@
 # LibQuery
 
+Library to make asyncronous requests easily managed and consumed;
+
+Motivation
+
+Before :
+```ts
+
+    data: SomeData;
+    loading: boolean;
+    errorLoading: string;
+
+    ngOnInit() {
+        this.loading = true;
+        this.httpService.get('/something/${this.id}').subscribe(
+            resp => {
+                this.data = response;
+                this.loading = false;
+            },
+            err => {
+                this.loading = false;
+                this.errorLoading = err.message // or something else
+            }
+        );
+    // What if you need to chain the second request ?
+    // What if you neeed to save data ?
+    // Caching ?
+    
+
+    }
+
+```
+
+Now :
+
+```ts
+    query = this.httpQuery.createQuery(
+        key: 'my-super-data', // it's a cache key - we may pass string or function if need a complex one
+        query: (id: string) => {
+            return this.httpService.get('/something/${this.id}'
+        },
+        cacheTime: 3000 // 0 by default (no caching), but we can make it configurable
+    );
+
+    ngOnInit() {
+        // or any other place
+        this.query.fetch('superId'); // type of an argument is checked and safe )
+    }
+
+```
+
+and inside the template 
+
+```html
+<ng-container *ngIf="query.state$ | async as query">
+    <div *ngIf="query.loading">...Loading...</div>
+    <div *ngIf="query.data as data">
+        {{data.superfield}}
+      // render data 
+      </div>
+    </div>
+    <div *ngIf="query.error">{{ query.error }}</div>
+  </ng-container>
+
+```
+
+if we have to send `mutation` request, like `POST`, `PUT` etc. in an another component and the we want to get fresh data for first component:
+
+```ts
+    querySecond = this.httpQuery.createQuery({
+        key: 'second',
+        query: (id: string) => this.httpService.delete(`route-${id}`)
+    })
+
+    querySecond.data$.pipe(tap(() => this.httpQuery.invalidateCachedQuery('my-super-data'))) /// so my-super-data would be refetched when we return to the first component
+```
+
+or even better )
+
+```ts
+    query.refetch('let-it-be-the-same-id'); // It'd ignore the cached value
+```
+
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 11.2.12.
 
 ## Development server
