@@ -24,7 +24,7 @@ Before :
             }
         );
     // What if you need to chain the second request ?
-    // What if you neeed to save data ?
+    // What if you neeed to save data ? We have to add a lot of the similar logic
     // Caching ?
     
 
@@ -40,6 +40,7 @@ Now :
         query: (id: string) => {
             return this.httpService.get('/something/${this.id}'
         },
+        initialData: skeletonData, // more on it later - we can introduce a very convenient way to work with the skeletons
         cacheTime: 3000 // 0 by default (no caching), but we can make it configurable
     );
 
@@ -50,7 +51,7 @@ Now :
 
 ```
 
-and inside the template 
+and inside the template
 
 ```html
 <ng-container *ngIf="query.state$ | async as query">

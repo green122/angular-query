@@ -20,7 +20,7 @@ type Query<TResponseData, TDependency> =
 interface QueryArgs<TResponseData, TDependency = void> {
   key: CacheKey<TDependency>;
   query: Query<TResponseData, TDependency>;
-  defaultData?: TResponseData;
+  initialData?: TResponseData;
   trigger?: Observable<TDependency>;
   cacheTime?: number;
 }
@@ -29,7 +29,7 @@ type ErrorStatus = { loading: false; data: null; error: string };
 
 type QueryStatus = 'fetching' | 'error' | 'success'; //reserved
 export type QueryState<T> =
-  | { loading: true; data: null; error: null }
+  | { loading: true; data: T | null; error: null }
   | { loading: false; data?: T; error: null }
   | ErrorStatus;
 
@@ -58,32 +58,37 @@ export class HttpQueryService {
     key,
     query,
     dep,
-    cacheTime
-  }: {
-    key: CacheKey<TDependency>;
-    query: Query<TResponseData, TDependency>;
-    dep: TDependency;
-    cacheTime: number
-  }): Observable<QueryState<TResponseData>> {
+    cacheTime = DEFAULT_CACHE_TIME,
+    initialData
+  }: QueryArgs<TResponseData, TDependency> & {dep: TDependency}) : Observable<QueryState<TResponseData>> {
     const fromCache = this.cacheService.find(key, dep) as TResponseData;
     if (fromCache) {
       return of(fromCache).pipe(map(mapToResponse));
     }
     const request$ = isFunction(query) ? query(dep) : query;
     return request$.pipe(
-      tap((response) => this.cacheService.save({ rawKey: key, data: response, dep, cacheTime })),
+      tap((response) =>
+        this.cacheService.save({ rawKey: key, data: response, dep, cacheTime })
+      ),
       map(mapToResponse),
       startWith({
         loading: true,
         error: null,
-        data: null,
+        data: initialData || null,
       })
     );
   }
 
-  createQuery<TResponseData, TDependency = void>(
-    {key, query, trigger, cacheTime = DEFAULT_CACHE_TIME}: QueryArgs<TResponseData, TDependency>,
-  ): QueryResult<TResponseData, TDependency> {
+  createQuery<TResponseData, TDependency = void>({
+    key,
+    query,
+    trigger,
+    initialData,
+    cacheTime
+  }: QueryArgs<TResponseData, TDependency>): QueryResult<
+    TResponseData,
+    TDependency
+  > {
     const subject$ = new BehaviorSubject<{ variable: TDependency } | undefined>(
       undefined
     );
@@ -94,7 +99,7 @@ export class HttpQueryService {
       return trigger.pipe(
         filter(isDefined),
         switchMap(({ variable }) =>
-          this.getRequest$({ key, query, dep: variable, cacheTime })
+          this.getRequest$({ key, query, dep: variable, cacheTime, initialData })
         ),
         shareReplay(1),
         catchError((error) => {
@@ -107,7 +112,7 @@ export class HttpQueryService {
       );
     };
 
-    const trigger$ =trigger
+    const trigger$ = trigger
       ? merge(trigger.pipe(map((v) => ({ variable: v }))), subject$)
       : subject$;
 
